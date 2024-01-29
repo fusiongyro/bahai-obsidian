@@ -9,8 +9,6 @@ packages = [{include = "bahai_obsidian"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-beautifulsoup4 = "^4.12.2"
-
 
 [build-system]
 requires = ["poetry-core"]
