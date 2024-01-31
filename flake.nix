@@ -11,14 +11,6 @@
       packages = forAllSystems (system: {
         default = pkgs.${system}.poetry2nix.mkPoetryApplication { 
           projectDir = self; 
-          overrides = pkgs.${system}.poetry2nix.defaultPoetryOverrides.extend 
-            (self: super: {
-              beautifulsoup4 = super.beautifulsoup4.overridePythonAttrs(
-                old: {
-                  buildInputs = (old.buildInputs or []) ++ [super.hatchling]; 
-                }
-              );
-            });
         };
       });
 
