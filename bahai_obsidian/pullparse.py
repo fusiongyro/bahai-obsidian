@@ -1,5 +1,4 @@
 import enum
-import itertools
 import sys
 from dataclasses import dataclass, field
 from typing import Iterable
@@ -30,7 +29,9 @@ class Heading(Token):
 class Format(enum.Enum):
     BOLD = 'b'
     ITALIC = 'i'
-    UNDERLINE = 'u'
+    UNDERLINE = 'ul'
+    SUPERSCRIPT = 'sup'
+
 
 @dataclass
 class InlineText:
@@ -39,8 +40,14 @@ class InlineText:
 
 
 @dataclass
+class Link:
+    text: str
+    href: str
+
+
+@dataclass
 class Paragraph(Token):
-    items: [InlineText]
+    items: [str|InlineText|Link]
     label: str = field(default='')
 
 
@@ -74,12 +81,48 @@ def retrieve_heading(node: Element, doc: DOMEventStream) -> Heading:
 def retrieve_paragraph(node: Element, doc: DOMEventStream) -> Paragraph:
     # so a paragraph has started
     # we need to read stuff until we reach the end of the paragraph tag
+    label = None
+    items = []
+    current_text = ''
+    format = None
     for event, node in doc:
         match event:
             case 'START_ELEMENT':
-                ...
+                if current_text:
+                    items.append(current_text)
+                    current_text = ''
+                match node.tagName:
+                    case 'u': format = Format.UNDERLINE
+                    case 'i' | 'em': format = Format.ITALIC
+                    case 'b': format = Format.BOLD
+                    # OK the next problem is that <sup><a> indicates a footnote, which should be encoded differently
+                    case 'sup': format = Format.SUPERSCRIPT
+                    case 'a':
+                        doc.expandNode(node)
+                        if 'class' in node.attributes and node.attributes['class'] and node.attributes['class'].firstChild.data == 'of' and 'id' in node.attributes:
+                            label = node.attributes['id'].firstChild.data
+                        elif node.childNodes and node.childNodes[0] and node.attributes['href']:
+                            items.append(Link(node.childNodes[0].data, node.attributes['href'].firstChild.data))
+                        else:
+                            raise BahaiHtmlParseError("Don't know what to do with this <a> tag: " + node.toxml())
+                    case _: raise BahaiHtmlParseError("Unknown inline tag type: " + node.tagName)
+
             case 'END_ELEMENT':
-                break
+                if node.tagName in ['b', 'i', 'ul', 'em', 'sup']:
+                    items.append(InlineText(format, current_text))
+                elif node.tagName == 'p':
+                    items.append(current_text)
+                    break
+                else: raise BahaiHtmlParseError("Unknown end element: " + node.tagName)
+
+            case 'CHARACTERS':
+                current_text += node.data
+
+            case _: raise BahaiHtmlParseError("unknown event type in paragraph: " + event)
+
+    # Now would be a good time to see if we have a label
+
+    return Paragraph(items, label=label)
 
 
 def tokenize(filename) -> Iterable[Token]:
