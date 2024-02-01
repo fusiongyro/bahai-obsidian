@@ -72,7 +72,14 @@ def retrieve_heading(node: Element, doc: DOMEventStream) -> Heading:
 
 
 def retrieve_paragraph(node: Element, doc: DOMEventStream) -> Paragraph:
-    return Paragraph("not implemented")
+    # so a paragraph has started
+    # we need to read stuff until we reach the end of the paragraph tag
+    for event, node in doc:
+        match event:
+            case 'START_ELEMENT':
+                ...
+            case 'END_ELEMENT':
+                break
 
 
 def tokenize(filename) -> Iterable[Token]:
