@@ -10,6 +10,9 @@ packages = [{include = "bahai_obsidian"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.dev.dependencies]
+python-lsp-server = "1.7.2"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
