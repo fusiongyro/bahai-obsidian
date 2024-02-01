@@ -34,7 +34,7 @@ class Format(enum.Enum):
 
 
 @dataclass
-class InlineText:
+class InlineFormattedText:
     format: Format
     text: str
 
@@ -45,26 +45,14 @@ class Link:
     href: str
 
 
+InlineText = str | InlineFormattedText | Link
+
+
 @dataclass
 class Paragraph(Token):
-    items: [str|InlineText|Link]
+    items: [InlineText]
     label: str = field(default='')
 
-
-
-def show_structure(filename):
-    doc = pulldom.parse(filename)
-    for event, node in doc:
-        if event == 'START_ELEMENT' and node.tagName == 'head':
-            # we can skip the rest of this node
-            doc.expandNode(node)
-            print(node)
-        elif event == 'START_ELEMENT' and node.tagName == 'a':
-            doc.expandNode(node)
-            print("got a tag: " + repr(node))
-        else:
-            print((event, node))
-    
 
 def retrieve_title(node: Element, doc: DOMEventStream) -> Title:
     # we can skip the rest of this node
